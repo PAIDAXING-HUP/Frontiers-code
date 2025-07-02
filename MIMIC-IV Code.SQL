@@ -10,7 +10,6 @@ JOIN mimiciv.icustays i
   ON s.icustay_id = i.icustay_id;
 SELECT COUNT(*) AS n_unique_sepsis
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 2. Add an age column to the sepsis_cohort_unique table.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
 ADD COLUMN age INTEGER;
@@ -24,7 +23,6 @@ DELETE FROM mimiciv_derived.sepsis_cohort_unique
 WHERE age < 65 OR age > 89;
 SELECT COUNT(*) AS remaining_sepsis_stays
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 4. Add a gender column to the sepsis_cohort_unique table
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
 ADD COLUMN gender VARCHAR(10);
@@ -37,7 +35,6 @@ SELECT
   COUNT(*) AS count_stays
 FROM mimiciv_derived.sepsis_cohort_unique
 GROUP BY gender;
-
 5. Add three columns: icu_intime, icu_outtime, icu_los in the sepsis_cohort_unique table.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
 ADD COLUMN icu_intime TIMESTAMP,
@@ -55,7 +52,6 @@ DELETE FROM mimiciv_derived.sepsis_cohort_unique
 WHERE icu_los < 2;
 SELECT COUNT(*) AS remaining_sepsis_stays
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 7. Added cam_icu_score column 
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
 ADD COLUMN cam_icu_score VARCHAR(5);
@@ -104,10 +100,8 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET cam_icu_score = cs.cam_icu_score
 FROM cam_score cs
 WHERE sc.stay_id = cs.stay_id;
-
 SELECT COUNT(*) AS n_after_camicu
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 10. Add delirium_assessment column
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
 ADD COLUMN delirium_assessment VARCHAR(5);
@@ -121,7 +115,6 @@ WHERE EXISTS (
     AND ce.value  = 'Positive'
     AND ce.charttime < sc.icu_intime + INTERVAL '24 hours'
 );
-
 12. Map the Delirium evaluation result after 24 hours to '1'/'0'/'none'.
 WITH first_delirium AS (
   SELECT
@@ -153,14 +146,12 @@ FROM delirium_score ds
 WHERE sc.stay_id = ds.stay_id;
 SELECT COUNT(*) AS n_after_delirium
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 13. Delete cases where both cam_icu_score and delirium_assessment are 'none'.
 DELETE FROM mimiciv_derived.sepsis_cohort_unique
 WHERE cam_icu_score        = 'none'
   AND delirium_assessment  = 'none';
 SELECT COUNT(*) AS remaining_after_both_none
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 14. Add the following information to my table.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN admission_type        VARCHAR(50),
@@ -173,7 +164,6 @@ ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN crrt                  INT DEFAULT 0,
   ADD COLUMN ventilator_setting    VARCHAR(50),
   ADD COLUMN weight                FLOAT;
-
 15. Use mimiciv_hosp.admissions to populate admission_type.
 UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET admission_type = ha.admission_type
@@ -186,7 +176,6 @@ SET
   respiratory_failure = ch.respiratory_failure
 FROM mimiciv_derived.charlson ch
 WHERE sc.hadm_id = ch.hadm_id;
-
 17. Tags hypertension (ICD-9 4010/4011/4019).
 WITH ht AS (
   SELECT DISTINCT hadm_id
@@ -197,7 +186,6 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET hypertension = 1
 FROM ht
 WHERE sc.hadm_id = ht.hadm_id;
-
 18. Tag cancer (ICD-10 Z860).
 WITH ca AS (
   SELECT DISTINCT hadm_id
@@ -208,7 +196,6 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET cancer = 1
 FROM ca
 WHERE sc.hadm_id = ca.hadm_id;
-
 19. Tag neurological_disease (ICD-10 Z820).
 WITH nd AS (
   SELECT DISTINCT hadm_id
@@ -219,7 +206,6 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET neurological_disease = 1
 FROM nd
 WHERE sc.hadm_id = nd.hadm_id;
-
 20. Tag renal_failure (ICD-10 N17, N170, N171, N172, N178, N179).
 WITH rf AS (
   SELECT DISTINCT hadm_id
@@ -231,26 +217,22 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET renal_failure = 1
 FROM rf
 WHERE sc.hadm_id = rf.hadm_id;
-
 21.Matches crrt.
 UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET crrt = 1
 FROM mimiciv_derived.crrt cr
 WHERE sc.stay_id = cr.stay_id;
-
 22. Matches ventilator_setting.
 UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET ventilator_setting = vs.ventilation_mode
 FROM mimiciv_derived.ventilator_settings vs
 WHERE sc.stay_id = vs.stay_id;
-
 23. Matches weight.
 UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET weight = fw.weight
 FROM mimiciv_derived.first_day_weight fw
 WHERE sc.subject_id = fw.subject_id
   AND sc.stay_id     = fw.stay_id;
-
 24. Matching midazolam (itemid = 221668).
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN midazolam_use  INTEGER DEFAULT 0,
@@ -269,7 +251,6 @@ UPDATE mimiciv_derived.sepsis_cohort_unique sc
 SET midazolam_use = 1
 FROM mid_first mf
 WHERE sc.stay_id = mf.stay_id;
-
 25. Matching  fentanyl (itemid = 225942).
 WITH fen_first AS (
   SELECT DISTINCT
@@ -297,7 +278,6 @@ SELECT
 FROM mimiciv_derived.sepsis_cohort_unique
 GROUP BY fentanyl_use
 ORDER BY fentanyl_use;
-
 26. Add all Day 1 vital signs columns in sepsis_cohort_unique table (using SBP/DBP/MBP).
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN heart_rate_max    FLOAT,
@@ -345,12 +325,10 @@ WHERE sc.subject_id = vs.subject_id
 SELECT
   COUNT(*) FILTER (WHERE sbp_max IS NOT NULL) AS n_with_sbp
 FROM mimiciv_derived.sepsis_cohort_unique;
-
 28. Add hematocrit_max、hematocrit_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN hematocrit_max    FLOAT,
   ADD COLUMN hematocrit_min    FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   hematocrit_max = lab.hematocrit_max,
@@ -358,7 +336,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 29. Add hemoglobin_max、hemoglobin_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN hemoglobin_max    FLOAT,
@@ -370,7 +347,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 30. Add platelets_max、platelets_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN platelets_max     FLOAT,
@@ -382,7 +358,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 31. Add wbc_max、wbc_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN wbc_max           FLOAT,
@@ -395,12 +370,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 32. Add albumin_max、albumin_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN albumin_max       FLOAT,
   ADD COLUMN albumin_min       FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   albumin_max    = lab.albumin_max,
@@ -408,12 +381,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 33. Add aniongap_max、aniongap_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN aniongap_max      FLOAT,
   ADD COLUMN aniongap_min      FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   aniongap_max   = lab.aniongap_max,
@@ -421,12 +392,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 34. Add bicarbonate_max、bicarbonate_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN bicarbonate_max   FLOAT,
   ADD COLUMN bicarbonate_min   FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   bicarbonate_max = lab.bicarbonate_max,
@@ -434,12 +403,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 35. Add bun_max、bun_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN bun_max           FLOAT,
   ADD COLUMN bun_min           FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   bun_max         = lab.bun_max,
@@ -447,12 +414,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 36. Add calcium_max、calcium_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN calcium_max       FLOAT,
   ADD COLUMN calcium_min       FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   calcium_max    = lab.calcium_max,
@@ -460,12 +425,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 37. Add creatinine_max、creatinine_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN creatinine_max    FLOAT,
   ADD COLUMN creatinine_min    FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   creatinine_max = lab.creatinine_max,
@@ -473,12 +436,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 38. Add sodium_max、sodium_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN sodium_max        FLOAT,
   ADD COLUMN sodium_min        FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   sodium_max     = lab.sodium_max,
@@ -486,12 +447,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 39. Add potassium_max、potassium_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN potassium_max     FLOAT,
   ADD COLUMN potassium_min     FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   potassium_max  = lab.potassium_max,
@@ -499,12 +458,10 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 40. Add inr_max、inr_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN inr_max           FLOAT,
   ADD COLUMN inr_min           FLOAT;
-
 UPDATE mimiciv_derived.sepsis_cohort_unique AS i
 SET
   inr_max        = lab.inr_max,
@@ -512,7 +469,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 41. Add pt_max、pt_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN pt_max            FLOAT,
@@ -525,7 +481,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 42. Add ptt_max、ptt_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN ptt_max           FLOAT,
@@ -538,7 +493,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 43. Add lactate_max、lactate_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN lactate_max       FLOAT,
@@ -551,7 +505,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 44. Add bilirubin_total_max、bilirubin_total_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN bilirubin_total_max FLOAT,
@@ -564,7 +517,6 @@ SET
 FROM mimiciv_derived.first_day_lab AS lab
 WHERE i.subject_id = lab.subject_id
   AND i.stay_id     = lab.stay_id;
-
 45. Add ph_max、ph_min、po2_max、po2_min、pco2_max、pco2_min.
 ALTER TABLE mimiciv_derived.sepsis_cohort_unique
   ADD COLUMN ph_max           FLOAT,
