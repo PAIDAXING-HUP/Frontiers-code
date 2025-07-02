@@ -3,7 +3,6 @@ options(datadist = NULL)
 ddist <- datadist(nomogram_data)
 options(datadist = "ddist")
 formula <- as.formula("cam_icu_score ~ neurological_disease+ventilator_setting+midazolam_use+sofa+temperature_mean+hemoglobin_min+sodium_max")
-
 F1 <- lrm(formula, data = nomogram_data, x = TRUE, y = TRUE)
 F1
 tmp <- nomogram(
