@@ -1,19 +1,11 @@
-# R Code:
-
 library(rms)
-# Reset datadist and create new datadist from the training dataset
 options(datadist = NULL)
 ddist <- datadist(nomogram_data)
 options(datadist = "ddist")
-
-# Define the formula
 formula <- as.formula("cam_icu_score ~ neurological_disease+ventilator_setting+midazolam_use+sofa+temperature_mean+hemoglobin_min+sodium_max")
 
-# Fit logistic regression model using lrm()
 F1 <- lrm(formula, data = nomogram_data, x = TRUE, y = TRUE)
 F1
-
-# Create nomogram object
 tmp <- nomogram(
   F1,
   fun = function(x) 1/(1 + exp(-x)),
@@ -25,7 +17,6 @@ tmp <- nomogram(
   lp = TRUE
 )
 
-# Plot nomogram
 plot(
   tmp,
   points.label = "Points",
