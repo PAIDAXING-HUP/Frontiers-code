@@ -1,7 +1,4 @@
-# R Code:
-
-# -------- Train / validation split script --------
-set.seed(123456789)  # reproducible split
+set.seed(123456789) 
 val_index <- sample(seq_len(nrow(final_data)),
                      size = round(nrow(final_data) * 0.40000))
 train_data      <- final_data[-val_index, ]
