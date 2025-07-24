@@ -35,7 +35,7 @@ Delirium is a common and serious complication in sepsis patients. Early risk ass
 Use R programming environment with the following recommended packages:
 install.packages(c("tidyverse", "survival", "rms", "pROC", "rmda"))
 
-Usage Instructions
+## Usage Instructions
 Data Extraction
 Run the SQL script in Navicat to extract clinical data from the MIMIC-IV database:
 Run MIMIC-IV Code.SQL in Navicat
@@ -62,5 +62,8 @@ source("multiroc code.R")
 Construct Nomogram
 source("nomogram_code.R")
 
-License
+## Contributing
+Open!
+
+## License
 This project is licensed under the MIT License.
